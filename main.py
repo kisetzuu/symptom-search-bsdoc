@@ -1,25 +1,31 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+import os
 import pandas as pd
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
+# -----------------------------
+# ✅ Use relative paths (works on Render)
+# -----------------------------
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+dataset_path = os.path.join(BASE_DIR, "data", "dataset.csv")
+precaution_path = os.path.join(BASE_DIR, "data", "symptom_precaution.csv")
+medication_path = os.path.join(BASE_DIR, "data", "disease_medication_with_commonality.csv")
+
+# -----------------------------
 # Load datasets
-dataset_path = r"C:\Users\kligh\OneDrive\Desktop\BSDoc_Symptom_Search\BSDoc\tf-idf\dataset.csv"
+# -----------------------------
 df = pd.read_csv(dataset_path)
+precautions_df = pd.read_csv(precaution_path)
+medications_df = pd.read_csv(medication_path)
 
 symptom_columns = [col for col in df.columns if col.startswith("Symptom_")]
 df["symptom_str"] = df[symptom_columns].apply(
     lambda x: " ".join([symptom.strip().lower() for symptom in x if pd.notna(symptom)]),
     axis=1
 )
-
-precaution_path = r"C:\Users\kligh\OneDrive\Desktop\BSDoc_Symptom_Search\BSDoc\tf-idf\symptom_precaution.csv"
-precautions_df = pd.read_csv(precaution_path)
-
-medication_path = r"C:\Users\kligh\OneDrive\Desktop\BSDoc_Symptom_Search\BSDoc\tf-idf\disease_medication_with_commonality.csv"
-medications_df = pd.read_csv(medication_path)
 
 vectorizer = TfidfVectorizer()
 tfidf_matrix = vectorizer.fit_transform(df["symptom_str"])
@@ -38,18 +44,26 @@ commonality_weights = {
 
 app = FastAPI()
 
-# Add CORS middleware so frontend requests won't be blocked
+# -----------------------------
+# Enable CORS (for frontend access)
+# -----------------------------
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # You can replace "*" with your frontend URL for security
+    allow_origins=["*"],  # Replace with frontend URL in prod
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
+# -----------------------------
+# Pydantic model
+# -----------------------------
 class SymptomRequest(BaseModel):
     symptoms: list[str]
 
+# -----------------------------
+# Symptom Prediction Endpoint
+# -----------------------------
 @app.post("/symptom-info")
 def symptom_info(request: SymptomRequest):
     input_symptoms = [sym.lower().strip() for sym in request.symptoms]
@@ -100,5 +114,5 @@ def symptom_info(request: SymptomRequest):
         "note": "If symptoms persist or worsen, please consult a healthcare provider."
     }
 
-# ✅ Run with:
+# ✅ Run locally with:
 # uvicorn main:app --reload --host 0.0.0.0 --port 8000
