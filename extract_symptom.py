@@ -18,3 +18,11 @@ unique_symptoms = sorted(set(all_symptoms))
 print(f"🧠 Total unique symptoms: {len(unique_symptoms)}")
 for symptom in unique_symptoms:
     print("-", symptom)
+
+# Get unique diseases
+unique_diseases = sorted(df['Disease'].dropna().str.strip().str.lower().unique())
+
+# Print them
+print(f"🩺 Total unique diseases: {len(unique_diseases)}")
+for disease in unique_diseases:
+    print("-", disease)
