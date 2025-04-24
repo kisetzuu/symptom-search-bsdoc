@@ -12,7 +12,6 @@ import difflib
 
 # -----------------------------
 # File paths
-# File paths
 # -----------------------------
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 dataset_path = os.path.join(BASE_DIR, "data", "dataset.csv")
@@ -41,7 +40,7 @@ vectorizer = TfidfVectorizer()
 tfidf_matrix = vectorizer.fit_transform(df["symptom_str"])
 
 # -----------------------------
-# Weights and Maps
+# Weights and Mappings
 # -----------------------------
 commonality_weights = {
     "Very common": 1.0,
@@ -130,15 +129,13 @@ def symptom_info(request: SymptomRequest):
 
     severity_score = sum(SYMPTOM_SEVERITY.get(s, 0.3) for s in input_symptoms) / max(len(input_symptoms), 1)
 
-    # Detect dominant category
     categories = [SYMPTOM_CATEGORY.get(s) for s in input_symptoms if SYMPTOM_CATEGORY.get(s)]
     most_common_category = Counter(categories).most_common(1)[0][0] if categories else None
 
     disease_scores = {}
-    matched_symptoms = set()
 
     for idx, row in df.iterrows():
-        disease = row["Disease"]
+        disease_name = row["Disease"]
         disease_symptoms = row["symptom_str"].split()
         matched = set(input_symptoms) & set(disease_symptoms)
         matched_count = len(matched)
