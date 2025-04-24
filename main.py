@@ -11,6 +11,7 @@ from collections import Counter
 
 # -----------------------------
 # File paths
+# File paths
 # -----------------------------
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 dataset_path = os.path.join(BASE_DIR, "data", "dataset.csv")
@@ -44,7 +45,7 @@ tfidf_matrix = vectorizer.fit_transform(df["symptom_str"])
 commonality_weights = {
     "Very common": 1.0,
     "Common": 0.8,
-    "Common chronic condition": 0.7,
+    "Common chronic condition": 0.9,
     "Occasional": 0.5,
     "Less common": 0.4,
     "Rare": 0.2,
@@ -106,9 +107,13 @@ def normalize(symptom: str):
 
 def expand_symptoms(symptoms: list[str]):
     expanded = set()
+    known = set(SYMPTOM_SYNONYMS.keys())
     for s in symptoms:
         norm = normalize(s)
-        mapped = SYMPTOM_SYNONYMS.get(norm, norm)
+        mapped = SYMPTOM_SYNONYMS.get(norm)
+        if not mapped:
+            closest = difflib.get_close_matches(norm, known, n=1, cutoff=0.85)
+            mapped = SYMPTOM_SYNONYMS.get(closest[0], norm) if closest else norm
         expanded.add(mapped)
     return list(expanded)
 
@@ -129,9 +134,10 @@ def symptom_info(request: SymptomRequest):
     most_common_category = Counter(categories).most_common(1)[0][0] if categories else None
 
     disease_scores = {}
+    matched_symptoms = set()
 
     for idx, row in df.iterrows():
-        disease_name = row["Disease"]
+        disease = row["Disease"]
         disease_symptoms = row["symptom_str"].split()
         matched = set(input_symptoms) & set(disease_symptoms)
         matched_count = len(matched)
