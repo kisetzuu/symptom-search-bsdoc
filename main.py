@@ -8,6 +8,7 @@ from sklearn.metrics.pairwise import cosine_similarity
 import re
 import json
 from collections import Counter
+import difflib
 
 # -----------------------------
 # File paths
